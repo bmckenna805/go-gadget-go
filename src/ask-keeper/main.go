@@ -8,6 +8,14 @@ import (
     "os"
 )
 
+func delete_config(config_loc string) {
+    fmt.Println("Deleting KSM Configuration")
+    err := os.Remove(config_loc)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+
 func get_client(token string, config_loc string) *ksm.SecretsManager {
 	clientOptions := &ksm.ClientOptions{
 		Token:  token,
@@ -29,17 +37,24 @@ func get_password(secretUID string, client *ksm.SecretsManager) []interface{} {
 func main() {
     // Set up command line arguments
     tokenPtr := flag.String("token", "", "One Time app Token, only required for initial run")
-    //deleteConfigPtr := flag.Bool("delete-config", false, "Delete an initialized configuration")
+    deleteConfigPtr := flag.Bool("delete-config", false, "Delete an initialized configuration")
     secretPtr := flag.String("secret", "", "Secret UID to look up")
     flag.Parse()
 
     // Establish ask-keeper config location
     config_loc := os.Getenv("HOME") + "/.ksm/ask-keeper-config.json"
 
-    // Establish a client
-	client := get_client(*tokenPtr, config_loc)
+    // If requested by flag, destroy the KSM config
+    if *deleteConfigPtr == true {
+        delete_config(config_loc)
+    }
 
-    // Get and print the password
-    secret := get_password(*secretPtr, client)
-    fmt.Println(secret)
+    // Establish a client
+    client := get_client(*tokenPtr, config_loc)
+
+    // Get and print the password, if not empty
+    if *secretPtr != "" {
+        secret := get_password(*secretPtr, client)
+        fmt.Println(secret)
+    }
 }
