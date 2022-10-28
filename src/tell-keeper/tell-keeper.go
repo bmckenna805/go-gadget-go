@@ -23,12 +23,27 @@ func getClient(token string, configLoc string) *ksm.SecretsManager {
 	return ksm.NewSecretsManager(clientOptions)
 }
 
-func createSecret(folderUID string, name string, password string,  client *ksm.SecretsManager) []interface{} {
-  secret := ksm.NewRecordCreate(name, "created by tell-keeper")
-  secret.Fields = append(customLogin.Fields,
+func createRecord(name string) *ksm.Record {
+  record := ksm.NewRecordCreate(name, "created by tell-keeper")
+  return record
+}
+
+func appendLogin(record *ksm.Record, login string) *ksm.Record{
+  record.Fields = append(customLogin.Fields,
+          ksm.NewLogin(login),
+  )
+  return record
+}
+
+func appendPassword(record *ksm.Record, password string) *ksm.Record{
+  record.Fields = append(customLogin.Fields,
           ksm.NewPassword(password),
   )
-  recordUid, err := sm.CreateSecretWithRecordData("", "[FOLDER UID]", secret)
+  return record
+}
+
+func createSecret(folder string, record *ksm.Record,  client *ksm.SecretsManager) []interface{} {
+  recordUid, err := sm.CreateSecretWithRecordData("", folder, record)
   if err != nil {
         log.Fatal(err)
     } else {
@@ -43,6 +58,7 @@ func main() {
     deleteConfigPtr := flag.Bool("delete-config", false, "Delete an initialized configuration")
     namePtr := flag.String("name", "", "Secret Name that will be added to Keeper")
     passwordPtr := flag.String("password", "", "Secret Password that will be added to Keeper")
+    loginPtr := flag.String("login", "", "Associated Secret Login that will be added to Keeper")
     folderPtr := flag.String("folder", "", "Shared folder UID to place secret into")
     flag.Parse()
 
@@ -58,8 +74,15 @@ func main() {
     client := getClient(*tokenPtr, configLoc)
 
     // Get and print the password, if not empty
-    if *secretPtr != "" {
-        secretUid := createSecret(*folderPtr, *secretPtr,*passwordPtr, client)
+    if *namePtr != "" {
+        record := createRecord(*namePtr)
+        if *passwordPtr != "" {
+            appendPassword(*record, *passwordPtr)
+        }
+        if *loginPtr != "" {
+            appendLogin(*record, *loginPtr)
+        }
+        secretUid := createSecret(*folderPtr, *record, client)
         fmt.Println(secretUid)
     }
 }
