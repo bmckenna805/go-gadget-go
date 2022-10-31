@@ -8,22 +8,22 @@ import (
     "os"
 )
 
-func delete_config(config_loc string) {
+func deleteConfig(configLoc string) {
     fmt.Println("Deleting KSM Configuration")
-    err := os.Remove(config_loc)
+    err := os.Remove(configLoc)
     if err != nil {
         log.Fatal(err)
     }
 }
 
-func get_client(token string, config_loc string) *ksm.SecretsManager {
+func getClient(token string, configLoc string) *ksm.SecretsManager {
 	clientOptions := &ksm.ClientOptions{
 		Token:  token,
-		Config: ksm.NewFileKeyValueStorage(config_loc)}
+		Config: ksm.NewFileKeyValueStorage(configLoc)}
 	return ksm.NewSecretsManager(clientOptions)
 }
 
-func get_password(secretUID string, client *ksm.SecretsManager) []interface{} {
+func getPassword(secretUID string, client *ksm.SecretsManager) []interface{} {
     notation := secretUID + "/field/password"
     value, err := client.GetNotation(notation)
     if err != nil {
@@ -42,19 +42,19 @@ func main() {
     flag.Parse()
 
     // Establish ask-keeper config location
-    config_loc := os.Getenv("HOME") + "/.ksm/ask-keeper-config.json"
+    configLoc := os.Getenv("HOME") + "/.ksm/ask-keeper-config.json"
 
     // If requested by flag, destroy the KSM config
     if *deleteConfigPtr == true {
-        delete_config(config_loc)
+        deleteConfig(configLoc)
     }
 
     // Establish a client
-    client := get_client(*tokenPtr, config_loc)
+    client := getClient(*tokenPtr, configLoc)
 
     // Get and print the password, if not empty
     if *secretPtr != "" {
-        secret := get_password(*secretPtr, client)
+        secret := getPassword(*secretPtr, client)
         fmt.Println(secret)
     }
 }
